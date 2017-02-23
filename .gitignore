@@ -90,3 +90,4 @@ ENV/
 
 # Confidential configuration files
 *.config
+*.txt
