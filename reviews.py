@@ -19,15 +19,19 @@ import configparser
 
 # TODO - работа с конфигом reviews.config
 # с помощью модуля configparser
-conf = configparser.RawConfigParser('reviews.config')
+config = configparser.ConfigParser()
+config.read('reviews.config')
+print(config.sections())
+urls = config['urls']
+url_admin = urls['url_admin']
+url_rev = urls['url_rev']
+print(url_admin, url_rev)
 
 # Читаем страницу с сайта
 s = requests.session()
 data = {"ln": sys.argv[1], "pd": sys.argv[2]}
-url = "http://kurskokib.ru/page_edit/_samples/admin.php"
-r = s.post(url, data=data)
-url = "http://kurskokib.ru/page_edit/_samples/admin.php?class=otivi"
-r = s.get(url)
+r = s.post(url_admin, data=data)
+r = s.get(url_rev)
 print(r.url)
 
 # Оставляем только строки, с отзывами "на модерации"
