@@ -19,9 +19,9 @@ import configparser
 
 
 def config(confname):
-   # Работа с конфигом reviews.config с помощью модуля configparser.
-   # Возвращает словарь с переменными из конфига confname
-   # TODO Добавить проверку существования файла из confname.
+    # Работа с конфигом reviews.config с помощью модуля configparser.
+    # Возвращает словарь с переменными из конфига confname
+    # TODO Добавить проверку существования файла из confname.
 
     config = configparser.ConfigParser()
     config.read(confname)
@@ -38,6 +38,8 @@ def config(confname):
 
 
 def tagparse(seekstring, namevar):
+    # Пока рассчитана на возврат value из var5 (timestamp)
+    #
     # Ищет в строке seekstring имя namevar вида name="var0" и возвращает строку,
     # которая содержится в valuevar="xxxx" между кавычками (без кавычек).
     # Если namevar не найдена - возвращает пустую строку?
@@ -47,11 +49,14 @@ def tagparse(seekstring, namevar):
     if namevar not in seekstring:
         return ''
     else:
-        return 'YEAH!!!!!'
+        valpos = seekstring.find('value="')
+        tmpstr = seekstring[valpos+7:valpos+17]
+        return tmpstr
 
 
 def main():
     # Читаем переменные из файла конфигурации
+    # dvar - словарь
     dvar = config('reviews.config')
 
     # Читаем страницу с сайта
@@ -82,32 +87,35 @@ def main():
 
     # В moder[] - строки из блока "на модерации"
     print('\n\n****** test function tagparse() *********')
-    print('moder[1] = ', moder[1])
-    print('tagparse(moder[1], "name") = ', tagparse(moder[1], 'name'))
+    for l in moder:
+        respars = tagparse(l, 'var5')
+        if respars != '':
+            print(respars)
     print('****** test function tagparse() *********\n\n')
 
-    # Формируем список messages с словарями полей var0..var7
-    messages = []
-    d = dict()
+    # Сформируем список таймстампов текущекго состояния
+    real_timestamps = []
     for l in moder:
-        if 'name="var0"' in l:
-            fv = l.find('value=')
-            vval = l[fv:fv+30]
-            d['var0'] = vval
-        if 'name="var1"' in l:
-            fv = l.find('value=')
-            vval = l[fv:fv+30]
-            d['var1'] = vval
-        if 'name="var2"' in l:
-            fv = l.find('value=')
-            vval = l[fv:fv+30]
-            d['var2'] = vval
-            messages.append(d)
-            d = dict()
+        respars = tagparse(l, 'var5')
+        if respars != '':
+            real_timestamps.append(respars)
+    print(real_timestamps)
 
-    for d in messages:
-        for item in d:
-            print(item, ': ', d[item])
+    # Если в командной строке задан параметр -f
+    f_param = False
+    for i in sys.argv:
+        if '-f' in i:
+            f_param = True
+    if f_param:
+        f = open('timestamps', 'w')
+        for l in real_timestamps:
+            f.write(l+'\n')
+        f.close()
+
+    # Открываем ранее сохраненные timestamp
+    ts = open('timestamps', 'r')
+    tss = ts.readlines()
+    print('*** tss = ', tss)
 
 if __name__ == '__main__':
     main()
