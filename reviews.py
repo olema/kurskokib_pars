@@ -113,9 +113,16 @@ def main():
         f.close()
 
     # Открываем ранее сохраненные timestamp
-    ts = open('timestamps', 'r')
-    tss = ts.readlines()
-    print('*** tss = ', tss)
+    tss = []
+    for line in open('timestamps', 'r'):
+        tss.append(line.strip())
+
+    print('На предыдущей модерации ' + str(len(tss)) + 'отзывов')
+    print(tss)
+
+    # Проверяем новые отзывы
+    #   tss - список со старыми
+    #   real_timestamps - новый список
 
 if __name__ == '__main__':
     main()
