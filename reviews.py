@@ -117,12 +117,27 @@ def main():
     for line in open('timestamps', 'r'):
         tss.append(line.strip())
 
-    print('На предыдущей модерации ' + str(len(tss)) + 'отзывов')
+    print('На предыдущей модерации ' + str(len(tss)) + ' отзывов')
     print(tss)
 
     # Проверяем новые отзывы
     #   tss - список со старыми
     #   real_timestamps - новый список
+    print('\nСравниваем кол-во элементов..."')
+    if len(tss) != len(real_timestamps):
+        print('---> НЕ РАВНЫ! ')
+    # если равны - сверяем по элементам
+    else:
+        print('---> Равны...')
+        print('\nСверяем по элементам...')
+        equ = True
+        for l_tss in tss:
+            if l_tss not in real_timestamp:
+                equ = False
+        if not equ:
+            print('--->НЕСОВПАДЕНИЕ!')
+        else:
+            print('--->Равны...')
 
 if __name__ == '__main__':
     main()
