@@ -18,6 +18,21 @@ import sys
 import configparser
 
 
+def check_cmd():
+    '''
+        Проверка параметров коммандной строки
+    '''
+    if len(sys.argv) < 3:
+        print('\nИспользование: ./reviews.py login password [-f]')
+        print('    где:')
+        print('       - login -  логин от страницы администратора;')
+        print('       - password -  пароль от страницы администратора;')
+        print('       - -f  - сформировать файл timestamps.\n')
+        return False
+    else:
+        return True
+
+
 def config(confname):
     # Работа с конфигом reviews.config с помощью модуля configparser.
     # Возвращает словарь с переменными из конфига confname
@@ -55,6 +70,10 @@ def tagparse(seekstring, namevar):
 
 
 def main():
+    # Проверяем параметры коммандной строки
+    if not check_cmd():
+        exit(-1)
+
     # Читаем переменные из файла конфигурации
     # dvar - словарь
     dvar = config('reviews.config')
@@ -85,7 +104,7 @@ def main():
         f.write(l + '\n')
     f.close()
 
-    # В moder[] - строки из блока "на модерации"
+    # DEBUG moder[] - строки из блока "на модерации"
     print('\n\n****** test function tagparse() *********')
     for l in moder:
         respars = tagparse(l, 'var5')
@@ -132,7 +151,7 @@ def main():
         print('\nСверяем по элементам...')
         equ = True
         for l_tss in tss:
-            if l_tss not in real_timestamp:
+            if l_tss not in real_timestamps:
                 equ = False
         if not equ:
             print('--->НЕСОВПАДЕНИЕ!')
