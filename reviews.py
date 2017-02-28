@@ -89,7 +89,7 @@ def main():
     if not log_init():
         exit(-1)
 
-    logging.info(u'Start testing reviews {}.'.format(sys.platform))
+    logging.info(u'Start testing reviews on {}.'.format(sys.platform))
 
     # TODO Проверка доступности сети
 
