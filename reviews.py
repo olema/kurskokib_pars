@@ -16,6 +16,17 @@
 import requests
 import sys
 import configparser
+import logging
+
+
+def log_init():
+    ''' Функция инциализации подсистемы логирования
+
+    '''
+    logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s',
+                        level=logging.DEBUG,
+                        filename=u'reviews.log')
+    return True
 
 
 def check_cmd():
@@ -68,12 +79,23 @@ def tagparse(seekstring, namevar):
         tmpstr = seekstring[valpos+7:valpos+17]
         return tmpstr
 
-
+# main
 def main():
     # Проверяем параметры коммандной строки
     if not check_cmd():
         exit(-1)
 
+    # TODO Инициализация подсистемы логирования
+    if not log_init():
+        exit(-1)
+
+    logging.info(u'Start testing reviews {}.'.format(sys.platform))
+
+    # TODO Проверка доступности сети
+
+    # TODO Проверка доступности сайта kurskokib.ru
+
+    #
     # Читаем переменные из файла конфигурации
     # dvar - словарь
     dvar = config('reviews.config')
