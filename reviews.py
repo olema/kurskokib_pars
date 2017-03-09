@@ -36,7 +36,7 @@ def mail_send(fromaddr, toaddr, subject, message):
     server = smtplib.SMTP('linuxserver.internal.kurskokib.ru')
     server.sendmail(fromaddr, toaddr, msg)
     server.quit()
-    print(msg)
+    # print(msg)
 
 
 def log_init():
@@ -79,8 +79,10 @@ def config(confname):
         urls = config['urls']
         dict_var['url_admin'] = urls['url_admin']
         dict_var['url_rev'] = urls['url_rev']
-        emails = config['emails']
-        print(emails)
+        if 'emails' in config.sections():
+            emails = config['emails']
+            for s in emails:
+               dict_var[s] = emails[s]
     except KeyError:
         # TODO Добавить выдачу ошибки в файл-флаг и на email
         print('Error...')
@@ -104,6 +106,7 @@ def tagparse(seekstring, namevar):
         tmpstr = seekstring[valpos+7:valpos+17]
         return tmpstr
 
+
 # main
 def main():
 
@@ -112,14 +115,7 @@ def main():
     if not log_init():
         exit(-1)
 
-    fromaddr = 'semashko@kursktelecom.ru'
-    toaddr = ['matushkin.oleg@gmail.com', 'okibkursk-it@yandex.ru']
-    subject = 'Veryfing reviews in kurskokib.ru: ' +\
-                    time.strftime('%a, %d %b %Y %H:%M:%S')
-    message = '''If you can read this text, you can erase this text...
-                url_admin = http://kurskokib.ru/page_edit/_samples/admin.php'''
-
-    mail_send(fromaddr, toaddr, subject, message)
+    # mail_send(fromaddr, toaddr, subject, message)
 
     # Проверяем параметры коммандной строки
     if not check_cmd():
@@ -141,7 +137,7 @@ def main():
     data = {"ln": sys.argv[1], "pd": sys.argv[2]}
     r = s.post(dvar['url_admin'], data=data)
     r = s.get(dvar['url_rev'])
-    print(r.url)
+    # print(r.url)
 
     # Оставляем только строки, с отзывами "на модерации"
     l = ''
@@ -195,7 +191,22 @@ def main():
         tss.append(line.strip())
 
     print('На предыдущей модерации ' + str(len(tss)) + ' отзывов')
-    print(tss)
+    logging.info('На предыдущей модерации ' + str(len(tss)) + ' отзывов')
+
+    # Подготовка данных для отправки email
+    fromaddr = 'semashko@kursktelecom.ru'
+    toaddr = ['matushkin.oleg@gmail.com', 'okibkursk-it@yandex.ru']
+    # Если есть email-ы из review.config, то заменяем toaddr на них
+    #
+    if 'email' in dvar:
+        toaddr = []
+        for k in dvar:
+            if 'email' in k:
+                toaddr.append(dvar[k])
+
+    subject = 'Reviews in kurskokib.ru: ' + time.strftime('%a, %d %b %Y %H:%M:%S')
+    message = '''If you can read this text, you can erase this text...
+                url_admin = http://kurskokib.ru/page_edit/_samples/admin.php'''
 
     # Проверяем новые отзывы
     #   tss - список со старыми
@@ -203,7 +214,20 @@ def main():
     print('\nСравниваем кол-во элементов..."')
     if len(tss) != len(real_timestamps):
         print('---> НЕ РАВНЫ! ')
-    # если равны - сверяем по элементам
+        # Отправляем письмо, что кол-во элементов изменилось
+        message = '''The number of items on the page has changed.
+        URL of administration page: http://kurskokib.ru/page_edit/_samples/admin.php'''
+        mail_send(fromaddr, toaddr, subject, message)
+        # Пишем в log
+        logging.info('The number of items on the page has changed.')
+        # Формируем новый список tss (таймстампов для хранения)
+        f = open('timestamps', 'w')
+        for l in real_timestamps:
+            f.write(l+'\n')
+        f.close()
+        logging.info('New timestamps file is created.')
+
+    # если равны по количеству, сверяем по элементам
     else:
         print('---> Равны...')
         print('\nСверяем по элементам...')
@@ -211,10 +235,23 @@ def main():
         for l_tss in tss:
             if l_tss not in real_timestamps:
                 equ = False
+                nequ_tss = l_tss
         if not equ:
             print('--->НЕСОВПАДЕНИЕ!')
             # TODO Отправка email
-
+            #
+            message = '''The items on the page has changed ({}).
+            URL of administration page:
+            http://kurskokib.ru/page_edit/_samples/admin.php'''.format(nequ_tss)
+            mail_send(fromaddr, toaddr, subject, message)
+            # Пишем в log
+            logging.info('The items on the page has changed.')
+            # Формируем новый список tss (таймстампов для хранения)
+            f = open('timestamps', 'w')
+            for l in real_timestamps:
+                f.write(l+'\n')
+            f.close()
+            logging.info('New timestamps file is created.')
         else:
             print('--->Равны...')
 
