@@ -3,6 +3,11 @@
 
 # Выборка сообщений на модерации со страницы отзывов на сайте
 # http://kurskokib.ru
+# Планируется:
+#   - по наличию новых сообщений выставлять файл-флаг по пути
+#       из файла reviews.config;
+#   - отправлять email на адреса из reviews.config;
+#
 # Имена переменных в тэгах <TD>:
 #   name="var0" - имя пользователя, оставившего сообщение;
 #   name="var1" - адрес сайта;
@@ -17,6 +22,21 @@ import requests
 import sys
 import configparser
 import logging
+import smtplib
+import time
+
+
+def mail_send(fromaddr, toaddr, subject, message):
+    '''Функция отправки письма'''
+    from_header = 'From: router2 <{}>\r\n'.format(fromaddr)
+    string_toaddr = ','.join(['<' + i + '>' for i in toaddr])
+    to_header = 'To: recipients {}\r\n'.format(string_toaddr)
+    subject_header = 'Subject: {}\r\n'.format(subject)
+    msg = '{}{}{}\n{}'.format(from_header, to_header, subject_header, message)
+    server = smtplib.SMTP('linuxserver.internal.kurskokib.ru')
+    server.sendmail(fromaddr, toaddr, msg)
+    server.quit()
+    print(msg)
 
 
 def log_init():
@@ -39,14 +59,17 @@ def check_cmd():
         print('       - login -  логин от страницы администратора;')
         print('       - password -  пароль от страницы администратора;')
         print('       - -f  - сформировать файл timestamps.\n')
+        logging.error("Ошибка в параметрах командной строки")
         return False
     else:
         return True
 
 
 def config(confname):
-    # Работа с конфигом reviews.config с помощью модуля configparser.
-    # Возвращает словарь с переменными из конфига confname
+    ''' Работа с конфигом reviews.config с помощью модуля configparser.
+        Возвращает словарь с переменными из конфига confname
+    '''
+
     # TODO Добавить проверку существования файла из confname.
 
     config = configparser.ConfigParser()
@@ -56,6 +79,8 @@ def config(confname):
         urls = config['urls']
         dict_var['url_admin'] = urls['url_admin']
         dict_var['url_rev'] = urls['url_rev']
+        emails = config['emails']
+        print(emails)
     except KeyError:
         # TODO Добавить выдачу ошибки в файл-флаг и на email
         print('Error...')
@@ -81,12 +106,23 @@ def tagparse(seekstring, namevar):
 
 # main
 def main():
-    # Проверяем параметры коммандной строки
-    if not check_cmd():
-        exit(-1)
 
     # TODO Инициализация подсистемы логирования
+    #
     if not log_init():
+        exit(-1)
+
+    fromaddr = 'semashko@kursktelecom.ru'
+    toaddr = ['matushkin.oleg@gmail.com', 'okibkursk-it@yandex.ru']
+    subject = 'Veryfing reviews in kurskokib.ru: ' +\
+                    time.strftime('%a, %d %b %Y %H:%M:%S')
+    message = '''If you can read this text, you can erase this text...
+                url_admin = http://kurskokib.ru/page_edit/_samples/admin.php'''
+
+    mail_send(fromaddr, toaddr, subject, message)
+
+    # Проверяем параметры коммандной строки
+    if not check_cmd():
         exit(-1)
 
     logging.info(u'Start testing reviews on {}.'.format(sys.platform))
@@ -134,7 +170,7 @@ def main():
             print(respars)
     print('****** test function tagparse() *********\n\n')
 
-    # Сформируем список таймстампов текущекго состояния
+    # Сформируем список таймстампов текущего состояния страницы
     real_timestamps = []
     for l in moder:
         respars = tagparse(l, 'var5')
@@ -177,6 +213,8 @@ def main():
                 equ = False
         if not equ:
             print('--->НЕСОВПАДЕНИЕ!')
+            # TODO Отправка email
+
         else:
             print('--->Равны...')
 
