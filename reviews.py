@@ -107,7 +107,7 @@ def tagparse(seekstring, namevar):
 # main
 def main():
 
-    # TODO Инициализация подсистемы логирования
+    # Инициализация подсистемы логирования
     #
     if not log_init():
         exit(-1)
@@ -123,7 +123,7 @@ def main():
     #
     dvar = config('reviews.config')
     if not dvar:
-        logging.error("No parameters in config file...")
+        logging.error(u'No parameters in config file...')
         return -1
 
     logging.info(u'Start testing reviews on {}.'.format(sys.platform))
@@ -137,7 +137,7 @@ def main():
     message = '''If you can read this text, you can erase this text...
                 url_admin = http://kurskokib.ru/page_edit/_samples/admin.php'''
 
-   # Если есть email-ы из review.config, то заменяем toaddr на них
+    # Если есть email-ы из review.config, то заменяем toaddr на них
     #
     if 'email' in dvar:
         toaddr = []
@@ -151,17 +151,28 @@ def main():
     try:
         r = s.post(dvar['url_admin'], data=data)
         status_code = r.status_code
-    except Exception:
-        status_code = r.status_code
+    except:
+        status_code = 300
 
     # Если сайт вернул не 200
     if status_code != 200:
         logging.error('Site return status code {}'.format(status_code))
-        message = 'Site return status code {}'.format(status_code)
+        message = '''Site return status code {}.
+        URL of administration page: http://kurskokib.ru/page_edit/_samples/admin.php
+        '''.format(status_code)
         mail_send(fromaddr, toaddr, subject, message)
         return -1
 
+
+        URL of administration page: http://kurskokib.ru/page_edit/_samples/admin.php'''
+
+
+
+
+
+
     r = s.get(dvar['url_rev'])
+
     # Оставляем только строки, с отзывами "на модерации"
     l = ''
     moder = []
@@ -176,10 +187,10 @@ def main():
             moder.append(l.strip())
 
     # DEBUG Для отладки
-    f = open('moder_block.txt', 'w')
-    for l in moder:
-        f.write(l + '\n')
-    f.close()
+    # f = open('moder_block.txt', 'w')
+    # for l in moder:
+    #     f.write(l + '\n')
+    # f.close()
 
     # DEBUG moder[] - строки из блока "на модерации"
     print('\n\n****** test function tagparse() *********')
