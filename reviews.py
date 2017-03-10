@@ -24,6 +24,7 @@ import configparser
 import logging
 import smtplib
 import time
+import os.path
 
 
 def mail_send(fromaddr, toaddr, subject, message):
@@ -70,23 +71,19 @@ def config(confname):
         Возвращает словарь с переменными из конфига confname
     '''
 
-    # TODO Добавить проверку существования файла из confname.
+    dict_var = dict()
+
+    # Проверка существования файла из confname.
+    # Если файла нет, возвращаем пустой словарь
+    if not os.path.exists(confname):
+        return dict_var
 
     config = configparser.ConfigParser()
     config.read(confname)
-    dict_var = dict()
-    try:
-        urls = config['urls']
-        dict_var['url_admin'] = urls['url_admin']
-        dict_var['url_rev'] = urls['url_rev']
-        if 'emails' in config.sections():
-            emails = config['emails']
-            for s in emails:
-               dict_var[s] = emails[s]
-    except KeyError:
-        # TODO Добавить выдачу ошибки в файл-флаг и на email
-        print('Error...')
-        exit(-1)
+    sections = config.sections()
+    for k in sections:
+        for s in config[k]:
+            dict_var[s] = config[k][s]
     return dict_var
 
 
@@ -115,30 +112,56 @@ def main():
     if not log_init():
         exit(-1)
 
-    # mail_send(fromaddr, toaddr, subject, message)
-
     # Проверяем параметры коммандной строки
+    #
     if not check_cmd():
+        logging.error("Wrong cmd parameters...")
         exit(-1)
+
+    # Загружаем пременные из конфигруационного файла reviews.config
+    # Если файла нет - выходим с ошибкой
+    #
+    dvar = config('reviews.config')
+    if not dvar:
+        logging.error("No parameters in config file...")
+        return -1
 
     logging.info(u'Start testing reviews on {}.'.format(sys.platform))
 
-    # TODO Проверка доступности сети
-
-    # TODO Проверка доступности сайта kurskokib.ru
-
-    #
     # Читаем переменные из файла конфигурации
     # dvar - словарь
-    dvar = config('reviews.config')
+
+    fromaddr = 'semashko@kursktelecom.ru'
+    toaddr = ['matushkin.oleg@gmail.com', 'okibkursk-it@yandex.ru']
+    subject = 'Reviews in kurskokib.ru: ' + time.strftime('%a, %d %b %Y %H:%M:%S')
+    message = '''If you can read this text, you can erase this text...
+                url_admin = http://kurskokib.ru/page_edit/_samples/admin.php'''
+
+   # Если есть email-ы из review.config, то заменяем toaddr на них
+    #
+    if 'email' in dvar:
+        toaddr = []
+        for k in dvar:
+            if 'email' in k:
+                toaddr.append(dvar[k])
 
     # Читаем страницу с сайта
     s = requests.session()
     data = {"ln": sys.argv[1], "pd": sys.argv[2]}
-    r = s.post(dvar['url_admin'], data=data)
-    r = s.get(dvar['url_rev'])
-    # print(r.url)
+    try:
+        r = s.post(dvar['url_admin'], data=data)
+        status_code = r.status_code
+    except Exception:
+        status_code = r.status_code
 
+    # Если сайт вернул не 200
+    if status_code != 200:
+        logging.error('Site return status code {}'.format(status_code))
+        message = 'Site return status code {}'.format(status_code)
+        mail_send(fromaddr, toaddr, subject, message)
+        return -1
+
+    r = s.get(dvar['url_rev'])
     # Оставляем только строки, с отзывами "на модерации"
     l = ''
     moder = []
@@ -194,20 +217,6 @@ def main():
     logging.info('На предыдущей модерации ' + str(len(tss)) + ' отзывов')
 
     # Подготовка данных для отправки email
-    fromaddr = 'semashko@kursktelecom.ru'
-    toaddr = ['matushkin.oleg@gmail.com', 'okibkursk-it@yandex.ru']
-    # Если есть email-ы из review.config, то заменяем toaddr на них
-    #
-    if 'email' in dvar:
-        toaddr = []
-        for k in dvar:
-            if 'email' in k:
-                toaddr.append(dvar[k])
-
-    subject = 'Reviews in kurskokib.ru: ' + time.strftime('%a, %d %b %Y %H:%M:%S')
-    message = '''If you can read this text, you can erase this text...
-                url_admin = http://kurskokib.ru/page_edit/_samples/admin.php'''
-
     # Проверяем новые отзывы
     #   tss - список со старыми
     #   real_timestamps - новый список

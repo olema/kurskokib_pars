@@ -91,5 +91,6 @@ ENV/
 # Confidential configuration files
 *.config
 *.txt
+*.native
 timestamps
 start
