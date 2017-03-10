@@ -163,14 +163,6 @@ def main():
         mail_send(fromaddr, toaddr, subject, message)
         return -1
 
-
-        URL of administration page: http://kurskokib.ru/page_edit/_samples/admin.php'''
-
-
-
-
-
-
     r = s.get(dvar['url_rev'])
 
     # Оставляем только строки, с отзывами "на модерации"
@@ -185,20 +177,6 @@ def main():
             break
         if in_moder_block:
             moder.append(l.strip())
-
-    # DEBUG Для отладки
-    # f = open('moder_block.txt', 'w')
-    # for l in moder:
-    #     f.write(l + '\n')
-    # f.close()
-
-    # DEBUG moder[] - строки из блока "на модерации"
-    print('\n\n****** test function tagparse() *********')
-    for l in moder:
-        respars = tagparse(l, 'var5')
-        if respars != '':
-            print(respars)
-    print('****** test function tagparse() *********\n\n')
 
     # Сформируем список таймстампов текущего состояния страницы
     real_timestamps = []
@@ -224,8 +202,12 @@ def main():
     for line in open('timestamps', 'r'):
         tss.append(line.strip())
 
-    print('На предыдущей модерации ' + str(len(tss)) + ' отзывов')
-    logging.info('На предыдущей модерации ' + str(len(tss)) + ' отзывов')
+    print('On previous page ' + str(len(tss)) + ' reviews')
+    logging.info(u'On previous page ' + str(len(tss)) + ' reviews...')
+
+    message = '''Check finished...
+        URL of administration page:
+        http://kurskokib.ru/page_edit/_samples/admin.php'''
 
     # Подготовка данных для отправки email
     # Проверяем новые отзывы
@@ -236,8 +218,8 @@ def main():
         print('---> НЕ РАВНЫ! ')
         # Отправляем письмо, что кол-во элементов изменилось
         message = '''The number of items on the page has changed.
-        URL of administration page: http://kurskokib.ru/page_edit/_samples/admin.php'''
-        mail_send(fromaddr, toaddr, subject, message)
+                URL of administration page:
+                http://kurskokib.ru/page_edit/_samples/admin.php'''
         # Пишем в log
         logging.info('The number of items on the page has changed.')
         # Формируем новый список tss (таймстампов для хранения)
@@ -245,7 +227,7 @@ def main():
         for l in real_timestamps:
             f.write(l+'\n')
         f.close()
-        logging.info('New timestamps file is created.')
+        logging.info(u'New timestamps file is created.')
 
     # если равны по количеству, сверяем по элементам
     else:
@@ -258,22 +240,21 @@ def main():
                 nequ_tss = l_tss
         if not equ:
             print('--->НЕСОВПАДЕНИЕ!')
-            # TODO Отправка email
-            #
             message = '''The items on the page has changed ({}).
             URL of administration page:
             http://kurskokib.ru/page_edit/_samples/admin.php'''.format(nequ_tss)
-            mail_send(fromaddr, toaddr, subject, message)
             # Пишем в log
-            logging.info('The items on the page has changed.')
+            logging.info(u'The items on the page has changed.')
             # Формируем новый список tss (таймстампов для хранения)
             f = open('timestamps', 'w')
             for l in real_timestamps:
                 f.write(l+'\n')
             f.close()
-            logging.info('New timestamps file is created.')
+            logging.info(u'New timestamps file is created.')
         else:
             print('--->Равны...')
+
+    mail_send(fromaddr, toaddr, subject, message)
 
 if __name__ == '__main__':
     main()
