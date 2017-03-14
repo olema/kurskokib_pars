@@ -106,16 +106,25 @@ def tagparse(seekstring, namevar):
 
 # main
 def main():
+    fromaddr = 'semashko@kursktelecom.ru'
+    toaddr = ['matushkin.oleg@gmail.com', 'okibkursk-it@yandex.ru']
+    subject = 'Reviews in kurskokib.ru: ' + time.strftime('%a, %d %b %Y %H:%M:%S')
+    message = '''Something error...
+    Check reviews parser log on server...'''
+
 
     # Инициализация подсистемы логирования
     #
     if not log_init():
+        mail_send(fromaddr, toaddr, subject, message)
         exit(-1)
 
     # Проверяем параметры коммандной строки
     #
     if not check_cmd():
         logging.error("Wrong cmd parameters...")
+        message = '''Error: Wrong cmd parameters...'''
+        mail_send(fromaddr, toaddr, subject, message)
         exit(-1)
 
     # Загружаем пременные из конфигруационного файла reviews.config
@@ -124,18 +133,13 @@ def main():
     dvar = config('reviews.config')
     if not dvar:
         logging.error(u'No parameters in config file...')
-        return -1
+        message = '''Error: No parameters in config file...'''
+        exit(-1)
 
     logging.info(u'Start testing reviews on {}.'.format(sys.platform))
 
     # Читаем переменные из файла конфигурации
     # dvar - словарь
-
-    fromaddr = 'semashko@kursktelecom.ru'
-    toaddr = ['matushkin.oleg@gmail.com', 'okibkursk-it@yandex.ru']
-    subject = 'Reviews in kurskokib.ru: ' + time.strftime('%a, %d %b %Y %H:%M:%S')
-    message = '''If you can read this text, you can erase this text...
-                url_admin = http://kurskokib.ru/page_edit/_samples/admin.php'''
 
     # Если есть email-ы из review.config, то заменяем toaddr на них
     #
