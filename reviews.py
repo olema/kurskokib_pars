@@ -112,7 +112,6 @@ def main():
     message = '''Something error...
     Check reviews parser log on server...'''
 
-
     # Инициализация подсистемы логирования
     #
     if not log_init():
@@ -123,6 +122,7 @@ def main():
     #
     if not check_cmd():
         logging.error("Wrong cmd parameters...")
+        subject = "ERROR. " + subject
         message = '''Error: Wrong cmd parameters...'''
         mail_send(fromaddr, toaddr, subject, message)
         exit(-1)
@@ -133,6 +133,7 @@ def main():
     dvar = config('reviews.config')
     if not dvar:
         logging.error(u'No parameters in config file...')
+        subject = "ERROR. " + subject
         message = '''Error: No parameters in config file...'''
         exit(-1)
 
@@ -161,11 +162,12 @@ def main():
     # Если сайт вернул не 200
     if status_code != 200:
         logging.error('Site return status code {}'.format(status_code))
+        subject = "ERROR. " + subject
         message = '''Site return status code {}.
         URL of administration page: http://kurskokib.ru/page_edit/_samples/admin.php
         '''.format(status_code)
         mail_send(fromaddr, toaddr, subject, message)
-        return -1
+        exit(-1)
 
     r = s.get(dvar['url_rev'])
 
@@ -213,7 +215,6 @@ def main():
         URL of administration page:
         http://kurskokib.ru/page_edit/_samples/admin.php'''
 
-    # Подготовка данных для отправки email
     # Проверяем новые отзывы
     #   tss - список со старыми
     #   real_timestamps - новый список
@@ -221,6 +222,7 @@ def main():
     if len(tss) != len(real_timestamps):
         print('---> НЕ РАВНЫ! ')
         # Отправляем письмо, что кол-во элементов изменилось
+        subject = "NEWS. " + subject
         message = '''The number of items on the page has changed.
                 URL of administration page:
                 http://kurskokib.ru/page_edit/_samples/admin.php'''
@@ -244,6 +246,7 @@ def main():
                 nequ_tss = l_tss
         if not equ:
             print('--->НЕСОВПАДЕНИЕ!')
+            subject = "NEWS. " + subject
             message = '''The items on the page has changed ({}).
             URL of administration page:
             http://kurskokib.ru/page_edit/_samples/admin.php'''.format(nequ_tss)
